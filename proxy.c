@@ -91,8 +91,8 @@ int server(uint16_t port)
 	/* Create server socket*/
 	int sock, accepted_client, client_addr_len;
 	struct sockaddr_in socket_addr, client_addr;
-	char msg[MAX_MSG_LENGTH], reply[MAX_MSG_LENGTH*3];
-	pid_t pid;
+	//char msg[MAX_MSG_LENGTH], reply[MAX_MSG_LENGTH*3];
+	//pid_t pid;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("Create socket error:");
@@ -142,7 +142,7 @@ void *receive_func(void *arg) {
     	int accepted_client = *(int*)arg;
 
 	while(1){ 
-		char *msg;
+		char *msg = (char *)malloc(MAX_MSG_LENGTH);
 		if(recv(accepted_client, msg, MAX_MSG_LENGTH, 0) < 0) {
 			perror("Recv error:");
 		}
@@ -155,6 +155,7 @@ void *receive_func(void *arg) {
 		if (send(accepted_client, reply, MAX_MSG_LENGTH*3, 0) < 0) {
 			perror("Send error:");
 		}
+		free(msg);
 	}
 
 	return 0;

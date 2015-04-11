@@ -128,7 +128,7 @@ int server(uint16_t port)
 		
 		pthread_t tid;
 		int result;
-		if((result = pthread_create(&tid, NULL, (void *)receive_func, (void *)&accepted_client))){ 
+		if((result = pthread_create(&tid, NULL, (void *)receive_func,accepted_client))){ 
 			perror("Create thread Failed"); 
 			return 1; 
 		}     

@@ -166,6 +166,6 @@ void *receive_func(void *arg) {
 	return 0;
 }
 
-int parse_http_header(char *msg, struct addrinfo ** addrbuf){
+int parse_http_header(cha *msg, struct addrinfo ** addrbuf){
 	return 0;
 }

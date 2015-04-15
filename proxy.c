@@ -167,5 +167,36 @@ void *receive_func(void *arg) {
 }
 
 int parse_http_header(char *msg, struct addrinfo ** addrbuf){
-	return 0;
+	char *parse = malloc(1024);
+	char *firstline = malloc(1024);
+	parse = strtok(msg, "\r\n");
+	firstline = strtok(parse, " ");
+
+	char get[4];
+	strncpy(get, "GET", 4);
+	if(strcmp(firstline, get)!=0){
+		printf("Not a GET request\n");
+		return 1;
+	}
+		
+	firstline = strtok(NULL, " ");
+	char urlcmp[2] = "\\"; // <---- should be "\" but i had to escape the escape character. I think this is how you do it?
+	if(strcmp(firstline,urlcmp)!=0){
+		char *url = malloc(strlen(firstline)+1);
+		strcpy(url, firstline);
+		// getaddrinfo!!!!!!!!!1
+	} else {
+		while(parse != NULL){
+			parse = strtok(NULL, "\r\n");
+			char *host = "HOST";
+			if(strstr(parse, host) != NULL){
+				char hostline[1024];
+				strcpy(hostline, parse);
+				char *addr = malloc(64);
+				addr = strtok(hostline, " :");
+				addr = strtok(NULL, " :");
+			}
+		}
+		// getaddrinfo!!!!!!!!!!!
+	}
 }

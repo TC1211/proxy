@@ -5,20 +5,19 @@
 
 typedef struct cache {
 	struct cache *next;
-	unsigned int length;
+	unsigned int length; //should be in B?
 	char *URL;
 	char *content;
 } cache_t;
 
+
 #define MAX_MSG_LENGTH (1024*16)
 #define MAX_BACK_LOG (5)
+#define MAX_HOST_LENGTH (255)
+#define IP_ADDR_LENGTH (32)
 
 cache_t *cache;
-int cache_size;
-
-
-//implement this for getting/processing getaddrinfo stuff; fills out ip_addr field
-int name_to_ipaddr(char *URL, char *servname, char *ip_addr);
+int cache_size/*in B*/, max_cache_size/*in B*/;
 
 //add entry to end of cache, in accordance with LRU
 int add_cache_entry(char *data, char *URL);
@@ -29,46 +28,12 @@ int enforce_LRU_middle(char *URL);
 //removes first entry (LRU entry) in cache
 int enforce_LRU_head();
 
+//search cache by URL
+cache_t *search_cache(char *URL);
 
-int name_to_ipaddr(char *URL, char *servname, char *ip_addr) {
-	int sockfd, rv;
-	struct addrinfo hints, *servinfo, *p;
-	struct sockaddr_in *info;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET6; //force IPv6
-	hints.ai_socktype = SOCK_STREAM;
-
-	if ((rv = getaddrinfo(URL, servname, &hints, &servinfo)) != 0) {
-		printf("Error with getaddrinfo: %s\n", gai_strerror(rv));
-		return 1;
-	}
-	
-	//loop through all results, connect with first one possible
-	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			perror("Socket: ");
-			continue;
-		}
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			perror("Connect: ");
-			continue;
-		}
-		info = (struct sockaddr_in *)p->ai_addr;
-		memcpy(ip_addr, inet_ntoa(info->sin_addr), sizeof(inet_ntoa(info->sin_addr)));
-		break; //must have connected successfuly if reach this point
-	}
-	if (p == NULL) {
-		//got to end of the list, made no connections
-		printf("Failed to connect in getaddrinfo\n");
-		return 1;
-	}
-	freeaddrinfo(servinfo); //finished with this struct
-	return 0;
-}
 
 int add_cache_entry(char *data, char *URL) {
+	//MUST CHECK AVAILABLE CACHE SPACE!
 	cache_t *obj = (cache_t *)malloc(sizeof(cache_t));
 	obj->content = data;
 	obj->URL = URL;
@@ -119,6 +84,7 @@ int enforce_LRU_middle(char *URL) {
 }
 
 int enforce_LRU_head() {
+	cache_size -= cache->length;
 	if (cache->next == NULL) {
 		cache->length = 0;
 		cache->URL = "";
@@ -130,3 +96,13 @@ int enforce_LRU_head() {
 	return 0;
 }
 
+cache_t *search_cache(char *URL) {
+	cache_t *iterator = cache;
+	while (iterator != NULL) {
+		if (strcmp(iterator->URL, URL) == 0) {
+			return iterator;
+		}
+		iterator = iterator->next;
+	}
+	return NULL;
+}

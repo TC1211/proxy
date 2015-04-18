@@ -239,7 +239,7 @@ char *get_host_from_request: self-explanatory
 char *get_host_from_request(char *request) {
 	char *host;
 	host = strtok(request,"//");
-	host = strtok(NULL,"/");
+	host = strok(NULL,"/");
 /*
 	char *copy = strstr(request, "Host: ");//strstr finds a "needle" in a "haystack"
 	void *temp = (void *)copy;

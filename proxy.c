@@ -103,7 +103,7 @@ int client(char *addr, char *message, int sock_proxy) {
 	}
 
 	printf("Connected to server %s\n", addr);
-
+	printf("////////////////////////\n%s\n////////////////////////\n", message);
 	if (send(sock, message, MAX_MSG_LENGTH, 0) < 0) {
 		perror("Send error");
 		return 1;
@@ -219,7 +219,7 @@ char *get_URL_from_request(char *request) {
 	void *temp = (void *)copy;
 	temp += 4 * sizeof(char); //get past "GET "
 	copy = (char *)temp;
-
+	
 	int i;
 	for (i = 0; i < strlen(request); i++) {
 		if (copy[i] == ' ') {		
@@ -240,22 +240,6 @@ char *get_host_from_request(char *request) {
 	char *host;
 	host = strtok(request,"//");
 	host = strtok(NULL,"/");
-/*
-	char *copy = strstr(request, "Host: ");//strstr finds a "needle" in a "haystack"
-	void *temp = (void *)copy;
-	temp += 6 * sizeof(char); //get past "Host: "
-	copy = (char *)temp;
-	
-	int i;
-	for (i = 0; i < strlen(request); i++) {
-		//printf("%d\n", copy[i]);
-		if (copy[i] == '\r') {
-			char *host = (char *)malloc(i * sizeof(char)); 
-			memcpy(host, copy, i);
-			host = strtok(host, "/");
-			return host;
-		} 
-	}*/
 	return host;
 }
 
@@ -266,12 +250,15 @@ int parse_request: deals with GET requests
 ******************************************************/
 int parse_request(char *msg, int sock) {
 	printf(" *** INCOMING REQUEST ***\n%s", msg);
+	char *msg_whole;
+	msg_whole = malloc(MAX_MSG_LENGTH);
+	strcpy(msg_whole, msg);
 	char *URL = get_URL_from_request(msg); //get target URL; will need for caching
 	char *host = get_host_from_request(msg); //get host
 	printf("FINAL URL: %s\nFINAL HOST: %s\n", URL, host);
 	char *ip_addr = host_to_ipaddr(host);
 	if(ip_addr == NULL)	return 1;
-	client(ip_addr, msg, sock);
+	client(ip_addr, msg_whole, sock);
 
 
 	free(URL);

@@ -19,7 +19,7 @@ TODO:
 */
 
 extern int accept4(int sock, struct sockaddr *client_addr, socklen_t *client_addr_len, int flags);
-int send_data_http(int port, char *message);
+int send_data(int port, char *message);
 int proxy(uint16_t port);
 int client(char *addr, char *message, int sock_proxy);
 void *receive_func(void *);
@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
 int send_data: sends message using a given port
 
 ******************************************************/
-int send_data_http(int port, char *message) {
+int send_data(int port, char *message) {
 	//must build http header before sending...
 	if (send(port, message, MAX_MSG_LENGTH, 0) < 0) {
 		perror("Send error");
@@ -91,7 +91,7 @@ int client(char *addr, char *message, int sock_proxy) {
 		return 1;
 	}
 
-	printf("Socket created\n");
+	printf("Socket created (client)\n");
 	server_addr.sin_addr.s_addr = inet_addr(addr);
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(80); //convention for Internet
@@ -110,15 +110,17 @@ int client(char *addr, char *message, int sock_proxy) {
 	
 	//get response
 	int recv_len = read(sock, response, MAX_MSG_LENGTH);
-	if (recv_len != 0) { //some kind of error
+	if (recv_len < 0) { //some kind of error
 		perror("Recv error");
 		return 1;
 	} else if (recv_len == 0) { //no data read
- 		close(sock); 
+ 		close(sock);
+		return 0;
 	}
 
 	//otherwise, send response
-	send_data_http(sock_proxy, response); 
+	printf("Response: %s\n", response);
+	send_data(sock_proxy, response); 
 	return 0;
 
 }
@@ -140,7 +142,7 @@ int proxy(uint16_t port)
 		return 1;
 	}
 
-	printf("Socket created\n");
+	printf("Socket created (proxy)\n");
 
 	socket_addr.sin_addr.s_addr = htonl(INADDR_ANY); //should this be changed to localhost?
 	socket_addr.sin_family = AF_INET;
@@ -245,7 +247,6 @@ char *get_URL_from_request(char *request) {
 		if (copy[i] == ' ') {		
 			char *URL = (char *)malloc(i * sizeof(char));
 			memcpy(URL, copy, i - 1);
-			printf("URL: %s\n", URL);
 			return URL; 
 		}
 	}
@@ -281,11 +282,12 @@ int parse_request: deals with GET requests
 
 ******************************************************/
 int parse_request(char *msg, int sock) {
-	printf("** INCOMING REQUEST **\n%s\n", msg);
-	char *URL = get_URL_from_request(msg); //get target URL; will need for caching	
+	printf(" *** INCOMING REQUEST ***\n%s", msg);
+	char *URL = get_URL_from_request(msg); //get target URL; will need for caching
 	char *host = get_host_from_request(msg); //get host
+	printf("FINAL URL: %s\nFINAL HOST: %s\n", URL, host);
 	char *ip_addr = host_to_ipaddr(host);
-
+	
 	client(ip_addr, msg, sock);
 
 /*	firstline = strtok(NULL, " ");

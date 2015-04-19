@@ -109,21 +109,24 @@ int client(char *addr, char *message, int sock_proxy, char *URL) {
 	
 	int readlen;
 	char *packet = (char *)malloc(MAX_MSG_LENGTH*3);
-	memset(packet, 0, sizeof(packet));
-	while ((readlen = read(sock, response, sizeof(response)))!= (size_t)NULL){
-		printf("%s", response);
+	memset(packet, 0, MAX_MSG_LENGTH*3);
+	while ((readlen = recv(sock, response, sizeof(response),0))!= 0){
+		//printf("%s", response);
 		strcat(packet, response);
-        	write(sock_proxy, response, readlen);
+        	send(sock_proxy, response, readlen,0);
 	}
 	
-	
+	printf("%s\n", packet);
 	if(strstr(packet, "200 OK") != NULL){ //must be 200 response
 		while((cache_size+sizeof(packet)) > max_cache_size){
-			cache_size = enforce_LRU_head(&cache, cache_size);
+			cache_t *temp = cache;
+			cache = cache->next;
+			cache_size -= temp->length;
+			free(temp);
 		}
-		printf("here!!!!!!!\n");
+		printf("\n\n\nmax: %i current: %i\n\n\n", max_cache_size, (int)strlen(packet));
 		add_cache_entry(&cache, packet, URL);
-		cache_size += sizeof(packet);
+		cache_size += (int)strlen(packet);
 	}
 	return 0;
 

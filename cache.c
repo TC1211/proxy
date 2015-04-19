@@ -79,21 +79,6 @@ int enforce_LRU_middle(cache_t **head, char *URL) {
 	return 1;
 }
 
-int enforce_LRU_head(cache_t **cache, int cache_size) {
-	cache_t *head = *cache;
-	cache_size -= head->length;
-	if (head->next == NULL) {
-		head->length = 0;
-		head->URL = "";
-		head->content = "";
-	}
-	else {
-		*cache = head->next;
-		free(head);
-	}
-	return cache_size;
-}
-
 cache_t *search_cache(cache_t **cache, char *URL) {
 	cache_t *iterator = *cache;
 	while (iterator != NULL) {

@@ -16,39 +16,47 @@ typedef struct cache {
 #define MAX_HOST_LENGTH (255)
 #define IP_ADDR_LENGTH (32)
 
-cache_t *cache;
-int cache_size/*in B*/, max_cache_size/*in B*/;
-
 //add entry to end of cache, in accordance with LRU
-int add_cache_entry(char *data, char *URL);
+int add_cache_entry(cache_t **, char *, char *);
 
 //moves entry used in the middle to the end of the cache, has become most recently used
-int enforce_LRU_middle(char *URL);
+int enforce_LRU_middle(cache_t **, char *);
 
 //removes first entry (LRU entry) in cache
 int enforce_LRU_head();
 
 //search cache by URL
-cache_t *search_cache(char *URL);
+cache_t *search_cache(cache_t **, char *);
 
 
-int add_cache_entry(char *data, char *URL) {
+int add_cache_entry(cache_t **cache, char *data, char *URL) {
 	//MUST CHECK AVAILABLE CACHE SPACE!
-	cache_t *obj = (cache_t *)malloc(sizeof(cache_t));
-	obj->content = data;
-	obj->URL = URL;
-	obj->next = NULL;
-	obj->length = (int) (sizeof(cache_t) + sizeof(data));
-
-	cache_t *iterater = cache;
-	while (iterater->next != NULL) {
-		iterater = iterater->next;
+	cache_t *head = *cache;
+	if(head->next==NULL){ //head
+		head->content = data;
+		head->URL = URL;
+		head->next = NULL;
+		head->length = (int) (sizeof(data));
+		printf("Saved: \nURL:%s\nPacket:%s\n", head->URL, head->content);
+	} else { // append last
+		cache_t *iterater = *cache;
+		while (iterater->next != NULL) {
+			iterater = iterater->next;
+		}
+		cache_t *newObj = (cache_t *)malloc(sizeof(cache_t));
+		newObj->content = data;
+		newObj->URL = URL;
+		newObj->next = NULL;
+		newObj->length = 0;
+		iterater->next = newObj;
+		printf("Saved: \nURL:%s\nPacket:%s\n", newObj->URL, newObj->content);
 	}
-	iterater->next = obj;
+	
 	return 0;
 }
 
-int enforce_LRU_middle(char *URL) {
+int enforce_LRU_middle(cache_t **head, char *URL) {
+	cache_t *cache = *head;
 	cache_t *iterator = cache;
 	cache_t *prev = iterator;
 	cache_t *last = cache;
@@ -57,23 +65,11 @@ int enforce_LRU_middle(char *URL) {
 	}
 	while (iterator != NULL) {
 		if (strcmp(iterator->URL, URL) == 0) { //FOUND IT
-			if ((iterator == cache && iterator->next == NULL)
-				|| (iterator != cache && iterator->next == NULL)) {
-				//first and only entry OR last entry in cache of size > 1
-				return 0; //do nothing, just leave it
-			} else if (iterator == cache && iterator->next != NULL) {
-				//first entry in cache of size > 1
-				last->next = iterator;
-				cache->next = iterator->next->next;
-				iterator->next = NULL;
-				last = last->next;
-				return 0;
-			} else if (iterator != cache && iterator->next != NULL) {
-				//somewhere in the middle of a cache of size > 1
+			if (iterator != last && cache -> next != NULL) {
+				//not last and of a cache of size > 1
 				prev->next = iterator->next;
 				last->next = iterator;
 				iterator->next = NULL;
-				last = iterator;
 				return 0;
 			}
 		}
@@ -83,21 +79,23 @@ int enforce_LRU_middle(char *URL) {
 	return 1;
 }
 
-int enforce_LRU_head() {
-	cache_size -= cache->length;
-	if (cache->next == NULL) {
-		cache->length = 0;
-		cache->URL = "";
-		cache->content = "";
+int enforce_LRU_head(cache_t **cache, int cache_size) {
+	cache_t *head = *cache;
+	cache_size -= head->length;
+	if (head->next == NULL) {
+		head->length = 0;
+		head->URL = "";
+		head->content = "";
 	}
 	else {
-		cache = cache->next;
+		*cache = head->next;
+		free(head);
 	}
-	return 0;
+	return cache_size;
 }
 
-cache_t *search_cache(char *URL) {
-	cache_t *iterator = cache;
+cache_t *search_cache(cache_t **cache, char *URL) {
+	cache_t *iterator = *cache;
 	while (iterator != NULL) {
 		if (strcmp(iterator->URL, URL) == 0) {
 			return iterator;
@@ -106,3 +104,4 @@ cache_t *search_cache(char *URL) {
 	}
 	return NULL;
 }
+

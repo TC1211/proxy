@@ -269,10 +269,9 @@ int parse_request(char *msg, int sock) {
 int cache_check(char *URL, int accepted_client){
 	cache_t *cache_entry;
 	if((cache_entry = search_cache(&cache, URL)) == NULL){
-		printf("Entry not i cache\n\n");
+		printf("Entry not i cache\n\n")
 		return 0;
 	} else {
-		printf("entry in cache\n\n");
 		enforce_LRU_middle(&cache, URL); 
 		send_data(accepted_client, cache_entry->content);
 		return 1;

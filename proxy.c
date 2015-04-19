@@ -101,33 +101,36 @@ int client(char *addr, char *message, int sock_proxy, char *URL) {
 	}
 
 	printf("Connected to server %s\n", addr);
-	printf("////////////////////////\n%s\n**********************\n", message);
+	//printf("////////////////////////\n%s**********************\n", message);
+	
+
 	if (send(sock, message, MAX_MSG_LENGTH, 0) < 0) {
 		perror("Send error");
 		return 1;
 	}
-	
+
 	int readlen;
-	char *packet = (char *)malloc(MAX_MSG_LENGTH*3);
-	memset(packet, 0, MAX_MSG_LENGTH*3);
-	while ((readlen = recv(sock, response, sizeof(response),0))!= 0){
+	char *packet = (char *)malloc(MAX_MSG_LENGTH*1024);
+	memset(packet, 0, MAX_MSG_LENGTH*1024);
+	while ((readlen = read(sock, response, sizeof(response)))!= 0){
 		//printf("%s", response);
 		strcat(packet, response);
-        	send(sock_proxy, response, readlen,0);
+        	write(sock_proxy, response, readlen);
 	}
 	
-	printf("%s\n", packet);
+	//printf("%s\n", packet);
 	if(strstr(packet, "200 OK") != NULL){ //must be 200 response
 		while((cache_size+sizeof(packet)) > max_cache_size){
 			cache_t *temp = cache;
 			cache = cache->next;
 			cache_size -= temp->length;
-			free(temp);
+			//free(temp);
 		}
-		printf("\n\n\nmax: %i current: %i\n\n\n", max_cache_size, (int)strlen(packet));
+		printf("\n\n\nmax: %i current: %i\n\n\n", max_cache_size, cache_size);
 		add_cache_entry(&cache, packet, URL);
 		cache_size += (int)strlen(packet);
 	}
+	//free(packet);
 	return 0;
 
 }
@@ -218,11 +221,12 @@ char *get_URL_from_request: self-explanatory
 ******************************************************/
 char *get_URL_from_request(char *request) {
 	char *copy = strdup(request);
-
+	
 	void *temp = (void *)copy;
 	temp += 4 * sizeof(char); //get past "GET "
 	copy = (char *)temp;
 	
+	copy = strtok(copy, " ");/*
 	int i;
 	for (i = 0; i < strlen(request); i++) {
 		if (copy[i] == ' ') {		
@@ -230,8 +234,8 @@ char *get_URL_from_request(char *request) {
 			memcpy(URL, copy, i);
 			return URL; 
 		}
-	}
-	return NULL;
+	}*/
+	return copy;
 }
 
 /******************************************************
@@ -265,14 +269,14 @@ int parse_request(char *msg, int sock) {
 	client(ip_addr, msg_whole, sock, URL);
 
 
-	free(URL);
+	//free(URL);
 	return 0;
 }
 
 int cache_check(char *URL, int accepted_client){
 	cache_t *cache_entry;
 	if((cache_entry = search_cache(&cache, URL)) == NULL){
-		printf("Entry not i cache\n\n");
+		printf("Entry not in cache\n\n");
 		return 0;
 	} else {
 		printf("entry in cache\n\n");

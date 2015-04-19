@@ -1,11 +1,10 @@
-/* helper file for proxy.c */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
 typedef struct cache {
 	struct cache *next;
-	unsigned int length; //should be in B?
+	unsigned int length;
 	char *URL;
 	char *content;
 } cache_t;
@@ -32,12 +31,13 @@ cache_t *search_cache(cache_t **, char *);
 int add_cache_entry(cache_t **cache, char *data, char *URL) {
 	//MUST CHECK AVAILABLE CACHE SPACE!
 	cache_t *head = *cache;
-	if(head->next==NULL){ //head
+	//char * temp;
+	if(head->length== 0){ //head
 		head->content = data;
 		head->URL = URL;
 		head->next = NULL;
 		head->length = (int) (sizeof(data));
-		printf("Saved: \nURL:%s\nPacket:%s\n", head->URL, head->content);
+		//printf("Saved: \nURL:%s\nPacket:%s\n", head->URL, head->content);
 	} else { // append last
 		cache_t *iterater = *cache;
 		while (iterater->next != NULL) {
@@ -49,7 +49,7 @@ int add_cache_entry(cache_t **cache, char *data, char *URL) {
 		newObj->next = NULL;
 		newObj->length = 0;
 		iterater->next = newObj;
-		printf("Saved: \nURL:%s\nPacket:%s\n", newObj->URL, newObj->content);
+		//printf("Saved: \nURL:%s\nPacket:%s\n", newObj->URL, newObj->content);
 	}
 	
 	return 0;
